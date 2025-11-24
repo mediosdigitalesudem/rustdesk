@@ -192,7 +192,38 @@ def main():
     modify_pubspec_yaml(args.app_name)
     copy_resources()
     
+    verify_changes()
+    
     print("Customization Complete.")
+
+def verify_changes():
+    print("-" * 30)
+    print("Verifying Changes in config.rs:")
+    file_path = 'libs/hbb_common/src/config.rs'
+    if os.path.exists(file_path):
+        with open(file_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+            
+        # Extract and print relevant lines
+        rendezvous = re.search(r'pub const RENDEZVOUS_SERVERS: &\[&str\] = &\[".*?"\];', content)
+        if rendezvous:
+            print(f"  {rendezvous.group(0)}")
+            
+        prod_server = re.search(r'pub static ref PROD_RENDEZVOUS_SERVER: RwLock<String> = RwLock::new\(".*?"\.to_owned\(\)\);', content)
+        if prod_server:
+            print(f"  {prod_server.group(0)}")
+
+        rs_pub_key = re.search(r'pub const RS_PUB_KEY: &str = ".*?";', content)
+        if rs_pub_key:
+            print(f"  {rs_pub_key.group(0)}")
+
+        default_settings = re.search(r'pub static ref DEFAULT_SETTINGS: RwLock<HashMap<String, String>> = RwLock::new\(HashMap::from\(\[\s*\("api-server"\.to_owned\(\), ".*?"\.to_owned\(\)\)\s*\]\)\);', content, re.DOTALL)
+        if default_settings:
+            print("  DEFAULT_SETTINGS updated with api-server.")
+            print(f"  {default_settings.group(0)}")
+    else:
+        print(f"  Error: {file_path} not found.")
+    print("-" * 30)
 
 if __name__ == '__main__':
     main()
