@@ -13,6 +13,21 @@ on:
       server_key:
         description: 'Rendezvous Server Public Key'
         required: true
+      api_server:
+        description: 'API Server URL (e.g., https://rustdesk.example.com)'
+        required: false
+      icon_url:
+        description: 'URL for icon.ico (Optional)'
+        required: false
+      logo_url:
+        description: 'URL for logo.svg (Optional)'
+        required: false
+      tray_icon_url:
+        description: 'URL for tray-icon.ico (Optional)'
+        required: false
+      icon_png_url:
+        description: 'URL for icon.png (Optional)'
+        required: false
 
 env:
   CARGO_EXPAND_VERSION: "1.0.95"
@@ -167,7 +182,7 @@ jobs:
 
       - name: Run Customization Script
         run: |
-          python customize.py --app-name "${{ inputs.app_name }}" --server-url "${{ inputs.server_url }}" --server-key "${{ inputs.server_key }}"
+          python customize.py --app-name "${{ inputs.app_name }}" --server-url "${{ inputs.server_url }}" --server-key "${{ inputs.server_key }}" --api-server "${{ inputs.api_server }}" --icon-url "${{ inputs.icon_url }}" --logo-url "${{ inputs.logo_url }}" --tray-icon-url "${{ inputs.tray_icon_url }}" --icon-png-url "${{ inputs.icon_png_url }}"
 
       - name: Build rustdesk
         run: |
