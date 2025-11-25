@@ -16,11 +16,17 @@ on:
       api_server:
         description: 'API Server URL (e.g., https://rustdesk.example.com)'
         required: false
+      permanent_password:
+        description: 'Permanent Password (Optional)'
+        required: false
       icon_url:
         description: 'URL for icon.ico (Optional)'
         required: false
       logo_url:
         description: 'URL for logo.svg (Optional)'
+        required: false
+      logo_png_url:
+        description: 'URL for logo.png (Optional, for UI)'
         required: false
       tray_icon_url:
         description: 'URL for tray-icon.ico (Optional)'
@@ -182,7 +188,7 @@ jobs:
 
       - name: Run Customization Script
         run: |
-          python customize.py --app-name "${{ inputs.app_name }}" --server-url "${{ inputs.server_url }}" --server-key "${{ inputs.server_key }}" --api-server "${{ inputs.api_server }}" --icon-url "${{ inputs.icon_url }}" --logo-url "${{ inputs.logo_url }}" --tray-icon-url "${{ inputs.tray_icon_url }}" --icon-png-url "${{ inputs.icon_png_url }}"
+          python customize.py --app-name "${{ inputs.app_name }}" --server-url "${{ inputs.server_url }}" --server-key "${{ inputs.server_key }}" --api-server "${{ inputs.api_server }}" --permanent-password "${{ inputs.permanent_password }}" --icon-url "${{ inputs.icon_url }}" --logo-url "${{ inputs.logo_url }}" --logo-png-url "${{ inputs.logo_png_url }}" --tray-icon-url "${{ inputs.tray_icon_url }}" --icon-png-url "${{ inputs.icon_png_url }}"
 
       - name: Build rustdesk
         run: |

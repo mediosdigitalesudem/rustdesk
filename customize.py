@@ -139,6 +139,85 @@ def download_resource(url, filename):
     except Exception as e:
         print(f"Failed to download {url}: {e}")
 
+    modify_config_rs(args.server_url, args.server_key)
+    modify_default_settings(args.api_server)
+    modify_hard_settings(args.permanent_password)
+    modify_runner_rc(args.app_name)
+    modify_pubspec_yaml(args.app_name)
+    copy_resources()
+    
+    verify_changes()
+    
+    print("Customization Complete.")
+
+def modify_hard_settings(password):
+    if not password:
+        return
+
+    file_path = 'libs/hbb_common/src/config.rs'
+    if not os.path.exists(file_path):
+        print(f"Error: {file_path} not found.")
+        return
+
+    with open(file_path, 'r', encoding='utf-8') as f:
+        content = f.read()
+
+    print(f"Updating HARD_SETTINGS with permanent password")
+    # Replace HARD_SETTINGS
+    # Pattern: pub static ref HARD_SETTINGS: RwLock<HashMap<String, String>> = Default::default();
+    pattern_settings = r'pub\s+static\s+ref\s+HARD_SETTINGS\s*:\s*RwLock<HashMap<String,\s*String>>\s*=\s*Default::default\(\);'
+    
+    # We use RwLock::new(HashMap::from([...])) to initialize with password
+    replacement_settings = (
+        'pub static ref HARD_SETTINGS: RwLock<HashMap<String, String>> = RwLock::new(HashMap::from([\n'
+        f'        ("password".to_owned(), "{password}".to_owned())\n'
+        '    ]));'
+    )
+    
+    content, count = re.subn(pattern_settings, replacement_settings, content)
+    if count == 0:
+        print("Warning: HARD_SETTINGS not found or not replaced.")
+    else:
+        print("HARD_SETTINGS replaced.")
+
+    with open(file_path, 'w', encoding='utf-8') as f:
+        f.write(content)
+
+def verify_changes():
+    print("-" * 30)
+    print("Verifying Changes in config.rs:")
+    file_path = 'libs/hbb_common/src/config.rs'
+    if os.path.exists(file_path):
+        with open(file_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+            
+        # Extract and print relevant lines
+        rendezvous = re.search(r'pub const RENDEZVOUS_SERVERS: &\[&str\] = &\[".*?"\];', content)
+        if rendezvous:
+            print(f"  {rendezvous.group(0)}")
+            
+        prod_server = re.search(r'pub static ref PROD_RENDEZVOUS_SERVER: RwLock<String> = RwLock::new\(".*?"\.to_owned\(\)\);', content)
+        if prod_server:
+            print(f"  {prod_server.group(0)}")
+
+        rs_pub_key = re.search(r'pub const RS_PUB_KEY: &str = ".*?";', content)
+        if rs_pub_key:
+            print(f"  {rs_pub_key.group(0)}")
+
+        default_settings = re.search(r'pub static ref DEFAULT_SETTINGS: RwLock<HashMap<String, String>> = RwLock::new\(HashMap::from\(\[\s*\("api-server"\.to_owned\(\), ".*?"\.to_owned\(\)\)\s*\]\)\);', content, re.DOTALL)
+        if default_settings:
+            print("  DEFAULT_SETTINGS updated with api-server.")
+            print(f"  {default_settings.group(0)}")
+
+        hard_settings = re.search(r'pub static ref HARD_SETTINGS: RwLock<HashMap<String, String>> = RwLock::new\(HashMap::from\(\[\s*\("password"\.to_owned\(\), ".*?"\.to_owned\(\)\)\s*\]\)\);', content, re.DOTALL)
+        if hard_settings:
+            print("  HARD_SETTINGS updated with permanent password.")
+            print(f"  {hard_settings.group(0)}")
+
+    else:
+        print(f"  Error: {file_path} not found.")
+    print("-" * 30)
+
 def copy_resources():
     custom_res_dir = 'custom_resources'
     if not os.path.exists(custom_res_dir):
@@ -150,7 +229,8 @@ def copy_resources():
         'icon.ico': ['res/icon.ico', 'flutter/windows/runner/resources/app_icon.ico'],
         'logo.svg': ['res/logo.svg'],
         'tray-icon.ico': ['res/tray-icon.ico'],
-        'icon.png': ['res/icon.png'] # Used for flutter icons generation
+        'icon.png': ['res/icon.png'], # Used for flutter icons generation
+        'logo.png': ['flutter/assets/logo.png'] # Used for app logo in UI
     }
 
     for src_name, dest_list in resource_map.items():
@@ -171,10 +251,12 @@ def main():
     parser.add_argument('--server-url', type=str, help='Rendezvous Server URL')
     parser.add_argument('--server-key', type=str, help='Rendezvous Server Public Key')
     parser.add_argument('--api-server', type=str, help='API Server URL')
+    parser.add_argument('--permanent-password', type=str, help='Permanent Password')
     parser.add_argument('--icon-url', type=str, help='URL for icon.ico')
     parser.add_argument('--logo-url', type=str, help='URL for logo.svg')
     parser.add_argument('--tray-icon-url', type=str, help='URL for tray-icon.ico')
     parser.add_argument('--icon-png-url', type=str, help='URL for icon.png')
+    parser.add_argument('--logo-png-url', type=str, help='URL for logo.png')
     
     args = parser.parse_args()
 
@@ -185,16 +267,7 @@ def main():
     download_resource(args.logo_url, 'logo.svg')
     download_resource(args.tray_icon_url, 'tray-icon.ico')
     download_resource(args.icon_png_url, 'icon.png')
-
-    modify_config_rs(args.server_url, args.server_key)
-    modify_default_settings(args.api_server)
-    modify_runner_rc(args.app_name)
-    modify_pubspec_yaml(args.app_name)
-    copy_resources()
-    
-    verify_changes()
-    
-    print("Customization Complete.")
+    download_resource(args.logo_png_url, 'logo.png')
 
 def verify_changes():
     print("-" * 30)
