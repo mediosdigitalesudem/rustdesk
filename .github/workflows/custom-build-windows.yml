@@ -252,6 +252,19 @@ jobs:
           mkdir -p ./SignOutput
           mv ./target/release/rustdesk-portable-packer.exe ./SignOutput/${{ inputs.app_name }}-install.exe
 
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v1.1
+
+      - name: Build MSI
+        shell: cmd
+        run: |
+          echo "Preparing MSI build..."
+          cd rustdesk
+          copy rustdesk.exe "${{ inputs.app_name }}.exe"
+          cd ..\res\msi
+          python preprocess.py --app-name "${{ inputs.app_name }}" --dist-dir "../../rustdesk"
+          msbuild msi.sln /p:Configuration=Release /p:Platform=x64
+
       - name: Upload Artifacts
         uses: actions/upload-artifact@master
         with:
@@ -259,3 +272,4 @@ jobs:
           path: |
             ./SignOutput/*.exe
             ./rustdesk/rustdesk.exe
+            ./res/msi/**/bin/Release/*.msi
