@@ -263,6 +263,7 @@ jobs:
           copy rustdesk.exe "${{ inputs.app_name }}.exe"
           cd ..\res\msi
           python preprocess.py --app-name "${{ inputs.app_name }}" --dist-dir "../../rustdesk"
+          nuget restore msi.sln
           msbuild msi.sln /p:Configuration=Release /p:Platform=x64
 
       - name: Upload Artifacts
