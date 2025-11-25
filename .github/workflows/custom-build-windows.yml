@@ -273,4 +273,5 @@ jobs:
           path: |
             ./SignOutput/*.exe
             ./rustdesk/rustdesk.exe
-            ./res/msi/**/bin/Release/*.msi
+            ./rustdesk/rustdesk.exe
+            ./res/msi/**/*.msi

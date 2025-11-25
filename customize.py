@@ -482,7 +482,8 @@ def modify_build_py(project_root, args):
     
     # In build_flutter_windows:
     # python3 ./generate.py -f ... -e .../rustdesk.exe
-    content = content.replace(f'/rustdesk.exe', f'/{sanitized_name}.exe')
+    # We DO NOT want to change the input file name here, because flutter still builds rustdesk.exe
+    # content = content.replace(f'/rustdesk.exe', f'/{sanitized_name}.exe')
     
     # In main (cargo build section):
     # mv target/release/rustdesk.exe target/release/RustDesk.exe
