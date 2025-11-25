@@ -139,17 +139,6 @@ def download_resource(url, filename):
     except Exception as e:
         print(f"Failed to download {url}: {e}")
 
-    modify_config_rs(args.server_url, args.server_key)
-    modify_default_settings(args.api_server)
-    modify_hard_settings(args.permanent_password)
-    modify_runner_rc(args.app_name)
-    modify_pubspec_yaml(args.app_name)
-    copy_resources()
-    
-    verify_changes()
-    
-    print("Customization Complete.")
-
 def modify_hard_settings(password):
     if not password:
         return
@@ -183,7 +172,7 @@ def modify_hard_settings(password):
     with open(file_path, 'w', encoding='utf-8') as f:
         f.write(content)
 
-def verify_changes():
+def verify_changes(args):
     print("-" * 30)
     print("Verifying Changes in config.rs:")
     file_path = 'libs/hbb_common/src/config.rs'
@@ -216,7 +205,46 @@ def verify_changes():
 
     else:
         print(f"  Error: {file_path} not found.")
+
+    if args.extra_args:
+        main_dart_path = "flutter/lib/main.dart"
+        with open(main_dart_path, "r", encoding="utf-8") as f:
+            if "args = List.from(args)..addAll([" in f.read():
+                print(f"Verified: Extra args injected into {main_dart_path}")
+            else:
+                print(f"WARNING: Extra args injection not found in {main_dart_path}")
+
     print("-" * 30)
+
+def inject_extra_args(extra_args_str):
+    print(f"Injecting extra args: {extra_args_str}")
+    import shlex
+    
+    try:
+        # Split args respecting quotes
+        extra_args_list = shlex.split(extra_args_str)
+        # Format as Dart list items: "'arg1', 'arg2'"
+        dart_args = ", ".join([f"'{arg}'" for arg in extra_args_list])
+        
+        main_dart_path = "flutter/lib/main.dart"
+        with open(main_dart_path, "r", encoding="utf-8") as f:
+            content = f.read()
+            
+        # Find main function
+        target = "Future<void> main(List<String> args) async {"
+        if target in content:
+            # Inject code to append args
+            injection = f"\n  args = List.from(args)..addAll([{dart_args}]);"
+            new_content = content.replace(target, target + injection)
+            
+            with open(main_dart_path, "w", encoding="utf-8") as f:
+                f.write(new_content)
+            print(f"Successfully injected extra args into {main_dart_path}")
+        else:
+            print(f"Error: Could not find main function in {main_dart_path}")
+            
+    except Exception as e:
+        print(f"Error injecting extra args: {e}")
 
 def copy_resources():
     custom_res_dir = 'custom_resources'
@@ -257,6 +285,7 @@ def main():
     parser.add_argument('--tray-icon-url', type=str, help='URL for tray-icon.ico')
     parser.add_argument('--icon-png-url', type=str, help='URL for icon.png')
     parser.add_argument('--logo-png-url', type=str, help='URL for logo.png')
+    parser.add_argument('--extra-args', type=str, help='Extra command line arguments (e.g. --view-style=adaptive)')
     
     args = parser.parse_args()
 
@@ -269,34 +298,19 @@ def main():
     download_resource(args.icon_png_url, 'icon.png')
     download_resource(args.logo_png_url, 'logo.png')
 
-def verify_changes():
-    print("-" * 30)
-    print("Verifying Changes in config.rs:")
-    file_path = 'libs/hbb_common/src/config.rs'
-    if os.path.exists(file_path):
-        with open(file_path, 'r', encoding='utf-8') as f:
-            content = f.read()
-            
-        # Extract and print relevant lines
-        rendezvous = re.search(r'pub const RENDEZVOUS_SERVERS: &\[&str\] = &\[".*?"\];', content)
-        if rendezvous:
-            print(f"  {rendezvous.group(0)}")
-            
-        prod_server = re.search(r'pub static ref PROD_RENDEZVOUS_SERVER: RwLock<String> = RwLock::new\(".*?"\.to_owned\(\)\);', content)
-        if prod_server:
-            print(f"  {prod_server.group(0)}")
+    modify_config_rs(args.server_url, args.server_key)
+    modify_default_settings(args.api_server)
+    modify_hard_settings(args.permanent_password)
+    modify_runner_rc(args.app_name)
+    modify_pubspec_yaml(args.app_name)
+    copy_resources()
 
-        rs_pub_key = re.search(r'pub const RS_PUB_KEY: &str = ".*?";', content)
-        if rs_pub_key:
-            print(f"  {rs_pub_key.group(0)}")
-
-        default_settings = re.search(r'pub static ref DEFAULT_SETTINGS: RwLock<HashMap<String, String>> = RwLock::new\(HashMap::from\(\[\s*\("api-server"\.to_owned\(\), ".*?"\.to_owned\(\)\)\s*\]\)\);', content, re.DOTALL)
-        if default_settings:
-            print("  DEFAULT_SETTINGS updated with api-server.")
-            print(f"  {default_settings.group(0)}")
-    else:
-        print(f"  Error: {file_path} not found.")
-    print("-" * 30)
+    if args.extra_args:
+        inject_extra_args(args.extra_args)
+    
+    verify_changes(args)
+    
+    print("Customization Complete.")
 
 if __name__ == '__main__':
     main()

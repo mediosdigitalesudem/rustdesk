@@ -34,6 +34,9 @@ on:
       icon_png_url:
         description: 'URL for icon.png (Optional)'
         required: false
+      extra_args:
+        description: 'Extra command line args (e.g. --view-style=adaptive)'
+        required: false
 
 env:
   CARGO_EXPAND_VERSION: "1.0.95"
@@ -188,7 +191,7 @@ jobs:
 
       - name: Run Customization Script
         run: |
-          python customize.py --app-name "${{ inputs.app_name }}" --server-url "${{ inputs.server_url }}" --server-key "${{ inputs.server_key }}" --api-server "${{ inputs.api_server }}" --permanent-password "${{ inputs.permanent_password }}" --icon-url "${{ inputs.icon_url }}" --logo-url "${{ inputs.logo_url }}" --logo-png-url "${{ inputs.logo_png_url }}" --tray-icon-url "${{ inputs.tray_icon_url }}" --icon-png-url "${{ inputs.icon_png_url }}"
+          python customize.py --app-name "${{ inputs.app_name }}" --server-url "${{ inputs.server_url }}" --server-key "${{ inputs.server_key }}" --api-server "${{ inputs.api_server }}" --permanent-password "${{ inputs.permanent_password }}" --icon-url "${{ inputs.icon_url }}" --logo-url "${{ inputs.logo_url }}" --logo-png-url "${{ inputs.logo_png_url }}" --tray-icon-url "${{ inputs.tray_icon_url }}" --icon-png-url "${{ inputs.icon_png_url }}" --extra-args "${{ inputs.extra_args }}"
 
       - name: Build rustdesk
         run: |
