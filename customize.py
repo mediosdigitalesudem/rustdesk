@@ -506,10 +506,8 @@ def modify_portable_generate(project_root, app_name):
     with open(gen_path, 'r', encoding='utf-8') as f:
         content = f.read()
     
-    # The magic string "rustdesk" might be used for installation folder name
-    # f.write("rustdesk".encode(encoding=encoding))
-    # We replace it with app_name
-    content = content.replace('"rustdesk".encode', f'"{app_name}".encode')
+    # The magic string "rustdesk" is checked by bin_reader.rs and MUST NOT be changed.
+    # content = content.replace('"rustdesk".encode', f'"{app_name}".encode')
     
     # Default executable name
     # options.executable = 'rustdesk.exe'
