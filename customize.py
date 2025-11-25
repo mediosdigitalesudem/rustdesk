@@ -52,8 +52,8 @@ def modify_config_rs(project_root, server_url, server_key):
     with open(file_path, 'w', encoding='utf-8') as f:
         f.write(content)
 
-def modify_default_settings(project_root, api_server):
-    if not api_server:
+def modify_default_settings(project_root, api_server, theme):
+    if not api_server and not theme:
         return
 
     file_path = os.path.join(project_root, 'libs/hbb_common/src/config.rs')
@@ -64,15 +64,24 @@ def modify_default_settings(project_root, api_server):
     with open(file_path, 'r', encoding='utf-8') as f:
         content = f.read()
 
-    print(f"Updating DEFAULT_SETTINGS with api-server: {api_server}")
+    print(f"Updating DEFAULT_SETTINGS with api-server: {api_server}, theme: {theme}")
     # Replace DEFAULT_SETTINGS
     # Pattern: pub static ref DEFAULT_SETTINGS: RwLock<HashMap<String, String>> = Default::default();
     pattern_settings = r'pub\s+static\s+ref\s+DEFAULT_SETTINGS\s*:\s*RwLock<HashMap<String,\s*String>>\s*=\s*Default::default\(\);'
     
-    # We use RwLock::new(HashMap::from([...])) to initialize with api-server
+    # Build the HashMap entries
+    entries = []
+    if api_server:
+        entries.append(f'("api-server".to_owned(), "{api_server}".to_owned())')
+    if theme:
+        entries.append(f'("theme".to_owned(), "{theme}".to_owned())')
+    
+    entries_str = ",\n        ".join(entries)
+    
+    # We use RwLock::new(HashMap::from([...])) to initialize
     replacement_settings = (
         'pub static ref DEFAULT_SETTINGS: RwLock<HashMap<String, String>> = RwLock::new(HashMap::from([\n'
-        f'        ("api-server".to_owned(), "{api_server}".to_owned())\n'
+        f'        {entries_str}\n'
         '    ]));'
     )
     
@@ -563,6 +572,7 @@ def main():
     parser.add_argument('--icon-png-url', help='URL for icon.png')
     parser.add_argument('--logo-png-url', help='URL for logo.png')
     parser.add_argument('--extra-args', help='Extra arguments to inject into main.dart (e.g. --view-style=adaptive)')
+    parser.add_argument('--theme', help='Default theme (light, dark, system)')
 
     args = parser.parse_args()
 
@@ -571,8 +581,8 @@ def main():
     print(f"Customizing RustDesk: {args.app_name}")
 
     modify_config_rs(project_root, args.server_url, args.server_key)
-    if args.api_server:
-        modify_default_settings(project_root, args.api_server)
+    if args.api_server or args.theme:
+        modify_default_settings(project_root, args.api_server, args.theme)
     if args.permanent_password:
         modify_hard_settings(project_root, args.permanent_password)
     
