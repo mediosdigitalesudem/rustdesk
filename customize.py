@@ -6,8 +6,8 @@ import re
 import shutil
 import urllib.request
 
-def modify_config_rs(server_url, server_key):
-    file_path = 'libs/hbb_common/src/config.rs'
+def modify_config_rs(project_root, server_url, server_key):
+    file_path = os.path.join(project_root, 'libs/hbb_common/src/config.rs')
     if not os.path.exists(file_path):
         print(f"Error: {file_path} not found.")
         return
@@ -50,11 +50,11 @@ def modify_config_rs(server_url, server_key):
     with open(file_path, 'w', encoding='utf-8') as f:
         f.write(content)
 
-def modify_default_settings(api_server):
+def modify_default_settings(project_root, api_server):
     if not api_server:
         return
 
-    file_path = 'libs/hbb_common/src/config.rs'
+    file_path = os.path.join(project_root, 'libs/hbb_common/src/config.rs')
     if not os.path.exists(file_path):
         print(f"Error: {file_path} not found.")
         return
