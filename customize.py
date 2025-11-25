@@ -16,10 +16,12 @@ def modify_config_rs(project_root, server_url, server_key):
         content = f.read()
 
     if server_url:
-        print(f"Updating RENDEZVOUS_SERVERS to {server_url}")
+        # Sanitize server_url: remove http:// or https:// for rendezvous servers
+        sanitized_url = server_url.replace("http://", "").replace("https://", "")
+        print(f"Updating RENDEZVOUS_SERVERS to {sanitized_url}")
         # Replace RENDEZVOUS_SERVERS
         pattern_servers = r'pub\s+const\s+RENDEZVOUS_SERVERS\s*:\s*&\[&str\]\s*=\s*&\[".*?"\];'
-        replacement_servers = f'pub const RENDEZVOUS_SERVERS: &[&str] = &["{server_url}"];'
+        replacement_servers = f'pub const RENDEZVOUS_SERVERS: &[&str] = &["{sanitized_url}"];'
         content, count = re.subn(pattern_servers, replacement_servers, content)
         if count == 0:
             print("Warning: RENDEZVOUS_SERVERS not found or not replaced.")
@@ -27,9 +29,9 @@ def modify_config_rs(project_root, server_url, server_key):
             print("RENDEZVOUS_SERVERS replaced.")
 
         # Replace PROD_RENDEZVOUS_SERVER
-        print(f"Updating PROD_RENDEZVOUS_SERVER to {server_url}")
+        print(f"Updating PROD_RENDEZVOUS_SERVER to {sanitized_url}")
         pattern_prod = r'pub\s+static\s+ref\s+PROD_RENDEZVOUS_SERVER\s*:\s*RwLock<String>\s*=\s*RwLock::new\(".*?"\.to_owned\(\)\);'
-        replacement_prod = f'pub static ref PROD_RENDEZVOUS_SERVER: RwLock<String> = RwLock::new("{server_url}".to_owned());'
+        replacement_prod = f'pub static ref PROD_RENDEZVOUS_SERVER: RwLock<String> = RwLock::new("{sanitized_url}".to_owned());'
         content, count = re.subn(pattern_prod, replacement_prod, content)
         if count == 0:
             print("Warning: PROD_RENDEZVOUS_SERVER not found or not replaced.")
