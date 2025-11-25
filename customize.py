@@ -525,10 +525,10 @@ def modify_main_cpp(project_root, app_name):
     # Replace default app name
     content = content.replace('std::wstring app_name = L"RustDesk";', f'std::wstring app_name = L"{app_name}";')
     
-    # Disable Rust override to ensure our name sticks (optional, but safer if we want to force it)
-    # content = content.replace('if (get_rustdesk_app_name(app_name_buffer, 512) == 0) {', 'if (false) { // Disabled by customize.py')
-    # Actually, let's just comment it out or make the condition fail.
-    content = content.replace('if (get_rustdesk_app_name(app_name_buffer, 512) == 0)', 'if (false && get_rustdesk_app_name(app_name_buffer, 512) == 0)')
+    # Disable Rust override to ensure our name sticks
+    # We use app_name.empty() which is false (since we set it above) but not a compile-time constant,
+    # avoiding error C4127 (conditional expression is constant).
+    content = content.replace('if (get_rustdesk_app_name(app_name_buffer, 512) == 0)', 'if (app_name.empty() && get_rustdesk_app_name(app_name_buffer, 512) == 0)')
     
     with open(cpp_path, 'w', encoding='utf-8') as f:
         f.write(content)
