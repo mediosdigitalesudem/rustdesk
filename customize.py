@@ -6,7 +6,7 @@ import re
 import shutil
 import urllib.request
 
-def modify_config_rs(project_root, server_url, server_key):
+def modify_config_rs(project_root, server_url, server_key, app_name):
     file_path = os.path.join(project_root, 'libs/hbb_common/src/config.rs')
     if not os.path.exists(file_path):
         print(f"Error: {file_path} not found.")
@@ -48,6 +48,17 @@ def modify_config_rs(project_root, server_url, server_key):
             print("Warning: RS_PUB_KEY not found or not replaced.")
         else:
             print("RS_PUB_KEY replaced.")
+
+    if app_name:
+        print(f"Updating APP_NAME to {app_name}")
+        # Replace APP_NAME
+        pattern_app_name = r'pub\s+static\s+ref\s+APP_NAME\s*:\s*RwLock<String>\s*=\s*RwLock::new\(".*?"\.to_owned\(\)\);'
+        replacement_app_name = f'pub static ref APP_NAME: RwLock<String> = RwLock::new("{app_name}".to_owned());'
+        content, count = re.subn(pattern_app_name, replacement_app_name, content)
+        if count == 0:
+            print("Warning: APP_NAME not found or not replaced.")
+        else:
+            print("APP_NAME replaced.")
 
     with open(file_path, 'w', encoding='utf-8') as f:
         f.write(content)
@@ -580,7 +591,7 @@ def main():
 
     print(f"Customizing RustDesk: {args.app_name}")
 
-    modify_config_rs(project_root, args.server_url, args.server_key)
+    modify_config_rs(project_root, args.server_url, args.server_key, args.app_name)
     if args.api_server or args.theme:
         modify_default_settings(project_root, args.api_server, args.theme)
     if args.permanent_password:
