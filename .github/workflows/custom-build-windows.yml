@@ -19,8 +19,11 @@ on:
       permanent_password:
         description: 'Permanent Password (Optional)'
         required: false
+      resources_url:
+        description: 'Base URL for resources (e.g., https://example.com/img/). Contains icon.ico, logo.svg, etc.'
+        required: false
       icon_url:
-        description: 'URL for icon.ico (Optional)'
+        description: 'URL for icon.ico (Optional override)'
         required: false
       logo_url:
         description: 'URL for logo.svg (Optional)'
@@ -195,7 +198,7 @@ jobs:
 
       - name: Run Customization Script
         run: |
-          python customize.py --app-name "${{ inputs.app_name }}" --server-url "${{ inputs.server_url }}" --server-key "${{ inputs.server_key }}" --api-server "${{ inputs.api_server }}" --permanent-password "${{ inputs.permanent_password }}" --icon-url "${{ inputs.icon_url }}" --logo-url "${{ inputs.logo_url }}" --logo-png-url "${{ inputs.logo_png_url }}" --tray-icon-url "${{ inputs.tray_icon_url }}" --icon-png-url "${{ inputs.icon_png_url }}" --extra-args="${{ inputs.extra_args }}" --theme "${{ inputs.theme }}"
+          python customize.py --app-name "${{ inputs.app_name }}" --server-url "${{ inputs.server_url }}" --server-key "${{ inputs.server_key }}" --api-server "${{ inputs.api_server }}" --permanent-password "${{ inputs.permanent_password }}" --resources-url "${{ inputs.resources_url }}" --icon-url "${{ inputs.icon_url }}" --logo-url "${{ inputs.logo_url }}" --logo-png-url "${{ inputs.logo_png_url }}" --tray-icon-url "${{ inputs.tray_icon_url }}" --icon-png-url "${{ inputs.icon_png_url }}" --extra-args="${{ inputs.extra_args }}" --theme "${{ inputs.theme }}"
 
       - name: Build rustdesk
         run: |

@@ -577,6 +577,7 @@ def main():
     parser.add_argument('--server-key', required=True, help='Rendezvous Server Public Key')
     parser.add_argument('--api-server', help='API Server URL')
     parser.add_argument('--permanent-password', help='Permanent Password')
+    parser.add_argument('--resources-url', help='Base URL for resources (e.g., https://example.com/img/). If set, other resource URLs are derived from this.')
     parser.add_argument('--icon-url', help='URL for icon.ico')
     parser.add_argument('--logo-url', help='URL for logo.svg')
     parser.add_argument('--tray-icon-url', help='URL for tray-icon.ico')
@@ -586,6 +587,20 @@ def main():
     parser.add_argument('--theme', help='Default theme (light, dark, system)')
 
     args = parser.parse_args()
+
+    # Derive resource URLs if resources-url is provided
+    if args.resources_url:
+        base_url = args.resources_url.rstrip('/')
+        if not args.icon_url:
+            args.icon_url = f"{base_url}/icon.ico"
+        if not args.logo_url:
+            args.logo_url = f"{base_url}/logo.svg"
+        if not args.tray_icon_url:
+            args.tray_icon_url = f"{base_url}/tray-icon.ico"
+        if not args.icon_png_url:
+            args.icon_png_url = f"{base_url}/icon.png"
+        if not args.logo_png_url:
+            args.logo_png_url = f"{base_url}/logo.png"
 
     project_root = os.getcwd()
 
