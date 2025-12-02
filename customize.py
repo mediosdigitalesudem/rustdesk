@@ -445,8 +445,10 @@ def main():
     modify_config_rs(project_root, args.server_url, args.server_key, args.app_name)
     if args.api_server or args.theme:
         modify_default_settings(project_root, args.api_server, args.theme)
-    if args.permanent_password:
-        modify_hard_settings(project_root, args.permanent_password)
+    # Prioritize environment variable for password to avoid shell interpolation issues
+    permanent_password = os.environ.get('RUSTDESK_PERMANENT_PASSWORD') or args.permanent_password
+    if permanent_password:
+        modify_hard_settings(project_root, permanent_password)
     
     modify_runner_rc(project_root, args.app_name)
     modify_pubspec_yaml(project_root, args.app_name)
