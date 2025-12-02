@@ -145,6 +145,36 @@ def modify_pubspec_yaml(project_root, app_name):
     with open(file_path, 'w', encoding='utf-8') as f:
         f.write(content)
 
+def modify_cargo_toml(project_root, app_name):
+    cargo_files = [
+        os.path.join(project_root, 'Cargo.toml'),
+        os.path.join(project_root, 'libs/portable/Cargo.toml')
+    ]
+    
+    for file_path in cargo_files:
+        if not os.path.exists(file_path):
+            print(f"Warning: {file_path} not found.")
+            continue
+            
+        print(f"Updating {file_path} with App Name: {app_name}")
+        with open(file_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+            
+        # Update description
+        content = re.sub(r'description = ".*?"', f'description = "{app_name}"', content)
+        # Update ProductName (if present in win-res metadata or similar comments/fields)
+        content = re.sub(r'ProductName = ".*?"', f'ProductName = "{app_name}"', content)
+        # Update FileDescription
+        content = re.sub(r'FileDescription = ".*?"', f'FileDescription = "{app_name}"', content)
+        # Update OriginalFilename
+        content = re.sub(r'OriginalFilename = ".*?"', f'OriginalFilename = "{app_name}.exe"', content)
+        
+        # Also try to update the [[bin]] name if possible, but that might break build scripts
+        # So we stick to metadata for now.
+        
+        with open(file_path, 'w', encoding='utf-8') as f:
+            f.write(content)
+
 def download_resource(url, dest_path):
     if not url:
         return
@@ -452,6 +482,9 @@ def main():
     
     modify_runner_rc(project_root, args.app_name)
     modify_pubspec_yaml(project_root, args.app_name)
+    
+    # Modify Cargo.toml files to update metadata
+    modify_cargo_toml(project_root, args.app_name)
     
     # New deep customization functions
     modify_build_py(project_root, args)

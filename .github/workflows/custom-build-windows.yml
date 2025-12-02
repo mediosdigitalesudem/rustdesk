@@ -269,7 +269,15 @@ jobs:
         run: |
           echo "Preparing MSI build..."
           cd rustdesk
-          copy rustdesk.exe "${{ inputs.app_name }}.exe"
+          if exist "${{ inputs.app_name }}.exe" (
+              echo Custom exe already exists.
+          ) else if exist rustdesk.exe (
+              copy rustdesk.exe "${{ inputs.app_name }}.exe"
+          ) else (
+              echo Error: Could not find executable to rename!
+              dir
+              exit 1
+          )
           cd ..\res\msi
           python preprocess.py --app-name "${{ inputs.app_name }}" --dist-dir "../../rustdesk"
           nuget restore msi.sln
