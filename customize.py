@@ -105,202 +105,6 @@ def modify_default_settings(project_root, api_server, theme):
     with open(file_path, 'w', encoding='utf-8') as f:
         f.write(content)
 
-def modify_runner_rc(app_name):
-    file_path = 'flutter/windows/runner/Runner.rc'
-    if not os.path.exists(file_path):
-        print(f"Error: {file_path} not found.")
-        return
-
-    with open(file_path, 'r', encoding='utf-8') as f:
-        content = f.read()
-
-    if app_name:
-        print(f"Updating Runner.rc with App Name: {app_name}")
-        # Update ProductName
-        content = re.sub(r'VALUE "ProductName", ".*?"', f'VALUE "ProductName", "{app_name}"', content)
-        # Update FileDescription
-        content = re.sub(r'VALUE "FileDescription", ".*?"', f'VALUE "FileDescription", "{app_name}"', content)
-        # Update LegalCopyright (Generic)
-        content = re.sub(r'VALUE "LegalCopyright", ".*?"', f'VALUE "LegalCopyright", "Copyright © {app_name}"', content)
-        # Update CompanyName (Generic)
-        content = re.sub(r'VALUE "CompanyName", ".*?"', f'VALUE "CompanyName", "{app_name}"', content)
-
-    with open(file_path, 'w', encoding='utf-8') as f:
-        f.write(content)
-
-def modify_pubspec_yaml(app_name):
-    file_path = 'flutter/pubspec.yaml'
-    if not os.path.exists(file_path):
-        print(f"Error: {file_path} not found.")
-        return
-
-    with open(file_path, 'r', encoding='utf-8') as f:
-        content = f.read()
-
-    if app_name:
-        print(f"Updating pubspec.yaml description")
-        # Update description
-        content = re.sub(r'description: .*', f'description: {app_name} Remote Desktop', content)
-
-    with open(file_path, 'w', encoding='utf-8') as f:
-        f.write(content)
-
-def download_resource(url, filename):
-    if not url:
-        return
-    
-    custom_res_dir = 'custom_resources'
-    if not os.path.exists(custom_res_dir):
-        os.makedirs(custom_res_dir)
-        
-    dest_path = os.path.join(custom_res_dir, filename)
-    print(f"Downloading {filename} from {url}...")
-    try:
-        urllib.request.urlretrieve(url, dest_path)
-        print(f"Downloaded {filename}")
-    except Exception as e:
-        print(f"Failed to download {url}: {e}")
-
-def modify_hard_settings(password):
-    if not password:
-        return
-
-    file_path = 'libs/hbb_common/src/config.rs'
-    if not os.path.exists(file_path):
-        print(f"Error: {file_path} not found.")
-        return
-
-    with open(file_path, 'r', encoding='utf-8') as f:
-        content = f.read()
-
-    print(f"Updating HARD_SETTINGS with permanent password")
-    # Replace HARD_SETTINGS
-    # Pattern: pub static ref HARD_SETTINGS: RwLock<HashMap<String, String>> = Default::default();
-    pattern_settings = r'pub\s+static\s+ref\s+HARD_SETTINGS\s*:\s*RwLock<HashMap<String,\s*String>>\s*=\s*Default::default\(\);'
-    
-    # We use RwLock::new(HashMap::from([...])) to initialize with password
-    replacement_settings = (
-        'pub static ref HARD_SETTINGS: RwLock<HashMap<String, String>> = RwLock::new(HashMap::from([\n'
-        f'        ("password".to_owned(), "{password}".to_owned())\n'
-        '    ]));'
-    )
-    
-    content, count = re.subn(pattern_settings, replacement_settings, content)
-    if count == 0:
-        print("Warning: HARD_SETTINGS not found or not replaced.")
-    else:
-        print("HARD_SETTINGS replaced.")
-
-    with open(file_path, 'w', encoding='utf-8') as f:
-        f.write(content)
-
-def verify_changes(args):
-    print("-" * 30)
-    print("Verifying Changes in config.rs:")
-    file_path = 'libs/hbb_common/src/config.rs'
-    if os.path.exists(file_path):
-        with open(file_path, 'r', encoding='utf-8') as f:
-            content = f.read()
-            
-        # Extract and print relevant lines
-        rendezvous = re.search(r'pub const RENDEZVOUS_SERVERS: &\[&str\] = &\[".*?"\];', content)
-        if rendezvous:
-            print(f"  {rendezvous.group(0)}")
-            
-        prod_server = re.search(r'pub static ref PROD_RENDEZVOUS_SERVER: RwLock<String> = RwLock::new\(".*?"\.to_owned\(\)\);', content)
-        if prod_server:
-            print(f"  {prod_server.group(0)}")
-
-        rs_pub_key = re.search(r'pub const RS_PUB_KEY: &str = ".*?";', content)
-        if rs_pub_key:
-            print(f"  {rs_pub_key.group(0)}")
-
-        default_settings = re.search(r'pub static ref DEFAULT_SETTINGS: RwLock<HashMap<String, String>> = RwLock::new\(HashMap::from\(\[\s*\("api-server"\.to_owned\(\), ".*?"\.to_owned\(\)\)\s*\]\)\);', content, re.DOTALL)
-        if default_settings:
-            print("  DEFAULT_SETTINGS updated with api-server.")
-            print(f"  {default_settings.group(0)}")
-
-        hard_settings = re.search(r'pub static ref HARD_SETTINGS: RwLock<HashMap<String, String>> = RwLock::new\(HashMap::from\(\[\s*\("password"\.to_owned\(\), ".*?"\.to_owned\(\)\)\s*\]\)\);', content, re.DOTALL)
-        if hard_settings:
-            print("  HARD_SETTINGS updated with permanent password.")
-            print(f"  {hard_settings.group(0)}")
-
-    else:
-        print(f"  Error: {file_path} not found.")
-
-    if args.extra_args:
-        main_dart_path = "flutter/lib/main.dart"
-        with open(main_dart_path, "r", encoding="utf-8") as f:
-            if "args = List.from(args)..addAll([" in f.read():
-                print(f"Verified: Extra args injected into {main_dart_path}")
-            else:
-                print(f"WARNING: Extra args injection not found in {main_dart_path}")
-
-    print("-" * 30)
-
-def inject_extra_args(extra_args_str):
-    print(f"Injecting extra args: {extra_args_str}")
-    import shlex
-    
-    try:
-        # Split args respecting quotes
-        extra_args_list = shlex.split(extra_args_str)
-        # Format as Dart list items: "'arg1', 'arg2'"
-        dart_args = ", ".join([f"'{arg}'" for arg in extra_args_list])
-        
-        main_dart_path = "flutter/lib/main.dart"
-        with open(main_dart_path, "r", encoding="utf-8") as f:
-            content = f.read()
-            
-        # Find main function
-        target = "Future<void> main(List<String> args) async {"
-        if target in content:
-            # Inject code to append args
-            injection = f"\n  args = List.from(args)..addAll([{dart_args}]);"
-            new_content = content.replace(target, target + injection)
-            
-            with open(main_dart_path, "w", encoding="utf-8") as f:
-                f.write(new_content)
-            print(f"Successfully injected extra args into {main_dart_path}")
-        else:
-            print(f"Error: Could not find main function in {main_dart_path}")
-            
-    except Exception as e:
-        print(f"Error injecting extra args: {e}")
-
-def copy_resources():
-    custom_res_dir = 'custom_resources'
-    if not os.path.exists(custom_res_dir):
-        print(f"No {custom_res_dir} directory found. Skipping resource copy.")
-        return
-
-    # Map source in custom_resources to destination
-    resource_map = {
-        'icon.ico': ['res/icon.ico', 'flutter/windows/runner/resources/app_icon.ico'],
-        'logo.svg': ['res/logo.svg'],
-        'tray-icon.ico': ['res/tray-icon.ico'],
-        'icon.png': ['res/icon.png'], # Used for flutter icons generation
-        'logo.png': ['flutter/assets/logo.png'] # Used for app logo in UI
-    }
-
-    for src_name, dest_list in resource_map.items():
-        src_path = os.path.join(custom_res_dir, src_name)
-        if os.path.exists(src_path):
-            for dest in dest_list:
-                dest_dir = os.path.dirname(dest)
-                if not os.path.exists(dest_dir):
-                    os.makedirs(dest_dir)
-
-    
-    content, count = re.subn(pattern_settings, replacement_settings, content)
-    if count == 0:
-        print("Warning: DEFAULT_SETTINGS not found or not replaced.")
-    else:
-        print("DEFAULT_SETTINGS replaced.")
-
-    with open(file_path, 'w', encoding='utf-8') as f:
-        f.write(content)
-
 def modify_runner_rc(project_root, app_name):
     file_path = os.path.join(project_root, 'flutter/windows/runner/Runner.rc')
     if not os.path.exists(file_path):
@@ -382,6 +186,35 @@ def modify_hard_settings(project_root, password):
     else:
         print("HARD_SETTINGS replaced.")
 
+    # Force get_permanent_password to use HARD_SETTINGS
+    print("Updating get_permanent_password to prioritize HARD_SETTINGS")
+    target_fn = (
+        '    pub fn get_permanent_password() -> String {\n'
+        '        let mut password = CONFIG.read().unwrap().password.clone();\n'
+        '        if password.is_empty() {\n'
+        '            if let Some(v) = HARD_SETTINGS.read().unwrap().get("password") {\n'
+        '                password = v.to_owned();\n'
+        '            }\n'
+        '        }\n'
+        '        password\n'
+        '    }'
+    )
+    
+    replacement_fn = (
+        '    pub fn get_permanent_password() -> String {\n'
+        '        if let Some(v) = HARD_SETTINGS.read().unwrap().get("password") {\n'
+        '            return v.to_owned();\n'
+        '        }\n'
+        '        CONFIG.read().unwrap().password.clone()\n'
+        '    }'
+    )
+    
+    if target_fn in content:
+        content = content.replace(target_fn, replacement_fn)
+        print("get_permanent_password updated.")
+    else:
+        print("Warning: get_permanent_password function body not found (exact match failed).")
+
     with open(file_path, 'w', encoding='utf-8') as f:
         f.write(content)
 
@@ -415,6 +248,9 @@ def verify_changes(project_root, app_name, server_url):
         if hard_settings:
             print("  HARD_SETTINGS updated with permanent password.")
             print(f"  {hard_settings.group(0)}")
+            
+        if 'if let Some(v) = HARD_SETTINGS.read().unwrap().get("password") {' in content:
+             print("  get_permanent_password updated to prioritize HARD_SETTINGS.")
 
     else:
         print(f"  Error: {file_path} not found.")
