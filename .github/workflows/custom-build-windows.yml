@@ -257,9 +257,10 @@ jobs:
           pushd ./libs/portable
           pip install -r requirements.txt
           python ./generate.py -f ../../rustdesk/ -o . -e ../../rustdesk/rustdesk.exe
+          cargo build --release
           popd
           mkdir -p ./SignOutput
-          mv ./target/release/rustdesk-portable-packer.exe ./SignOutput/${{ inputs.app_name }}-install.exe
+          mv ./libs/portable/target/release/rustdesk-portable-packer.exe "./SignOutput/${{ inputs.app_name }}-install.exe"
 
       - name: Add MSBuild to PATH
         uses: microsoft/setup-msbuild@v1.1
